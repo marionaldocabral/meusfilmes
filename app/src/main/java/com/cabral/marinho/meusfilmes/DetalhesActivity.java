@@ -312,6 +312,7 @@ public class DetalhesActivity extends AppCompatActivity {
             removeFavorito();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void adicionaFavorito() throws JSONException {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
         String favoritos = prefs.getString("favoritos", "[]");

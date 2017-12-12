@@ -3,7 +3,9 @@ package com.cabral.marinho.meusfilmes;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -26,6 +28,7 @@ public class ListaActivity extends AppCompatActivity {
     private ListView listViewLista;
     private ArrayAdapter<String> adapter;
     private List<Filme> filmes;
+    private JSONArray jsonArray;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,13 +46,17 @@ public class ListaActivity extends AppCompatActivity {
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, titulos);
         listViewLista.setAdapter(adapter);
         listViewLista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
                 String historico = prefs.getString("historico", "[]");
-                JSONArray jsonArray = null;
+
                 try {
                     jsonArray = new JSONArray(historico);
+                    removeAnteriores(filmes.get(position).getId());
+                    if(jsonArray.length() > 19)
+                        jsonArray.remove(0);
                     jsonArray.put(filmes.get(position).getId());
                     prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
@@ -70,6 +77,14 @@ public class ListaActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setTitle("Início");
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void removeAnteriores(Long id) throws JSONException {
+        for(int i = 0; i < jsonArray.length(); i++){
+            if(jsonArray.getLong(i) == id)
+                jsonArray.remove(i);
+        }
     }
 
     @Override
