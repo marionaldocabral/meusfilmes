@@ -57,10 +57,13 @@ public class ListaActivity extends AppCompatActivity {
                     removeAnteriores(filmes.get(position).getId());
                     if(jsonArray.length() > 19)
                         jsonArray.remove(0);
-                    jsonArray.put(filmes.get(position).getId());
+                    JSONArray tempArray = new JSONArray();
+                    tempArray.put(filmes.get(position).getId());
+                    for(int i = 0; i < jsonArray.length(); i++)
+                        tempArray.put(jsonArray.getLong(i));
                     prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
-                    historico = jsonArray.toString();
+                    historico = tempArray.toString();
                     editor.putString("historico", historico);
                     editor.commit();
                 } catch (JSONException e) {
