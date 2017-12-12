@@ -100,7 +100,6 @@ public class InicioActivity extends AppCompatActivity {
                     progressDialog.setMessage("Falha ao atualizar!");
                     progressDialog.dismiss();
                 }
-
             }
 
             @Override
@@ -141,7 +140,6 @@ public class InicioActivity extends AppCompatActivity {
                 return str.toString();
             }
         }
-
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         atualizou = prefs.getBoolean("atualizou", false);
         if(!atualizou){

@@ -2,14 +2,20 @@ package com.cabral.marinho.meusfilmes;
 
 import android.app.ListActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.util.List;
 
@@ -39,6 +45,20 @@ public class ListaActivity extends AppCompatActivity {
         listViewLista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
+                String historico = prefs.getString("historico", "[]");
+                JSONArray jsonArray = null;
+                try {
+                    jsonArray = new JSONArray(historico);
+                    jsonArray.put(filmes.get(position).getId());
+                    prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    historico = jsonArray.toString();
+                    editor.putString("historico", historico);
+                    editor.commit();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
                 Bundle bundle = new Bundle();
                 bundle.putLong("id", filmes.get(position).getId());
                 filmeDao.close();
@@ -47,6 +67,20 @@ public class ListaActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setTitle("Início");
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) { //Botão adicional na ToolBar
+        switch (item.getItemId()) {
+            case android.R.id.home:  //ID do seu botão (gerado automaticamente pelo android, usando como está, deve funcionar
+                finish();
+                break;
+            default:break;
+        }
+        return true;
     }
 
     @Override
@@ -54,9 +88,5 @@ public class ListaActivity extends AppCompatActivity {
         if(filmeDao != null)
             filmeDao.close();
         super.onDestroy();
-    }
-
-    public void mostrarInicio(View v){
-        finish();
     }
 }

@@ -79,7 +79,7 @@
                 android:textSize="18sp" />
 
             <TextView
-                android:id="@+id/textGeneros"
+                android:id="@+id/textData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAlignment="center"
@@ -87,7 +87,17 @@
                 android:textSize="18sp" />
 
             <TextView
-                android:id="@+id/textData"
+                android:id="@+id/textView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gêneros"
+                android:textAlignment="center"
+                android:textColor="@android:color/white"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textGeneros"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAlignment="center"
@@ -119,7 +129,7 @@
                 android:background="@android:color/background_dark"
                 android:text="Adicionar Favorito"
                 android:textColor="@android:color/white"
-                android:onClick="adicionarFavorito"
+                android:onClick="onClick"
                 android:textSize="18sp" />
 
         </LinearLayout>

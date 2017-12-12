@@ -10,12 +10,16 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -56,6 +60,7 @@ public class DetalhesActivity extends AppCompatActivity {
     private Button button;
     private Long idSelecionado;
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -77,16 +82,22 @@ public class DetalhesActivity extends AppCompatActivity {
                 if(imagens.get(0) != null) {
                     Bitmap bitmap = imagens.get(0);
                     imageView.setImageBitmap(bitmap);
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    String stringBitmap = bitmapToString(bitmap);
+                    editor.putString("poster" + idSelecionado, stringBitmap);
+                    editor.commit();
                     b1 = true;
                 }
                 else
                     b1 =false;
                 if(imagens.get(1) != null) {
-                    layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), imagens.get(1)));
+                    Bitmap bitmap = imagens.get(1);
+                    layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), bitmap));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
-                    boolean baixou = true;
-                    editor.putBoolean("background", baixou);
+                    String stringBitmap = bitmapToString(bitmap);
+                    editor.putString("background" + idSelecionado, stringBitmap);
                     editor.commit();
                     b2 = true;
                 }
@@ -137,7 +148,6 @@ public class DetalhesActivity extends AppCompatActivity {
                 return imagens;
             }
         }
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detalhes);
         layoutFundo = (ConstraintLayout)findViewById(R.id.layoutFundo);
@@ -182,11 +192,100 @@ public class DetalhesActivity extends AppCompatActivity {
             idioma = "Francês";
         textIdioma.setText("Idioma: " + idioma);
         textTOriginal.setText("Título Original: " + filme.getOriginal_title());
-        textGeneros.setText("Gêneros: " + filme.getGenre_ids());
+        String generos = "";
+        try {
+            JSONArray idGenreros = new JSONArray(filme.getGenre_ids());
+            for(int i = 0; i < idGenreros.length(); i++){
+                generos = generos + getGeneroPorId(idGenreros.getString(i));
+                if(i < (idGenreros.length() - 1))
+                    generos = generos + "\n";
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        textGeneros.setText(generos);
         textSinopse.setText(filme.getOverview() + "\n");
         textData.setText("Lançamento: " + dataConvertida(filme.getRelease_date()));
-        DownloaderTask downloaderTask =  new DownloaderTask();
-        downloaderTask.execute(link + filme.getPoster_path(), link + filme.getBackdrop_path());
+        try {
+            if(eFavorito()){
+                button.setText("Remover Favorito");
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+        String stringBackground = prefs.getString("background" + idSelecionado, "");
+        String stringPoster = prefs.getString("poster" + idSelecionado, "");
+        if(stringBackground.equals("")  || stringPoster.equals("")){
+            DownloaderTask downloaderTask =  new DownloaderTask();
+            downloaderTask.execute(link + filme.getPoster_path(), link + filme.getBackdrop_path());
+        }
+        else{
+            Bitmap bitmapPoster = stringToBitmap(stringPoster);
+            Bitmap bitmapBackground = stringToBitmap(stringBackground);
+            imageView.setImageBitmap(bitmapPoster);
+            layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), bitmapBackground));
+        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setTitle("Início");
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) { //Botão adicional na ToolBar
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                startActivity(new Intent(this, InicioActivity.class));
+                finish();
+                break;
+            default:break;
+        }
+        return true;
+    }
+
+    private  String getGeneroPorId(String id) {
+        switch (id) {
+            case "28":
+                return "Ação";
+            case "12":
+                return "Aventura";
+            case "16":
+                return "Animação";
+            case "35":
+                return "Comédia";
+            case "80":
+                return "Crime";
+            case "99":
+                return "Documentário";
+            case "18":
+                return "Drama";
+            case "10751":
+                return "Família";
+            case "14":
+                return "Fantasia";
+            case "36":
+                return "História";
+            case "27":
+                return "Terror";
+            case "10402":
+                return "Música";
+            case "9648":
+                return "Mistério";
+            case "10749":
+                return "Romance";
+            case "878":
+                return "Ficção científica";
+            case "10770":
+                return "Cinema TV";
+            case "53":
+                return "Thriller";
+            case "10752":
+                return "Guerra";
+            case "37":
+                return "Faroeste";
+            default:
+                return "";
+        }
     }
 
     private String dataConvertida(String data){
@@ -204,56 +303,80 @@ public class DetalhesActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    public void adicionarFavorito(View v){
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public void onClick(View v) throws JSONException {
+        if(!eFavorito()){
+            adicionaFavorito();
+        }
+        else
+            removeFavorito();
+    }
+
+    private void adicionaFavorito() throws JSONException {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
-        String favoritos = prefs.getString("favoritos", "");
+        String favoritos = prefs.getString("favoritos", "[]");
+        JSONArray jsonArray = new JSONArray(favoritos);
+        jsonArray.put(idSelecionado);
+        prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+        SharedPreferences.Editor editor = prefs.edit();
+        favoritos = jsonArray.toString();
+        editor.putString("favoritos", favoritos);
+        editor.commit();
+        button.setText("Remover Favorito");
+        Toast.makeText(this, "Adicionado!", Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean eFavorito() throws JSONException {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+        String favoritos = prefs.getString("favoritos", "[]");
+        JSONArray jsonArray = new JSONArray(favoritos);
+        boolean estaNaLista = false;
+        for(int i = 0; i < jsonArray.length(); i++){
+            if(jsonArray.getLong(i) == idSelecionado)
+                estaNaLista = true;
+        }
+        return estaNaLista;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void removeFavorito() throws JSONException {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+        String favoritos = prefs.getString("favoritos", "[]");
+        JSONArray jsonArray = new JSONArray(favoritos);
         boolean achei = false;
-        if(!favoritos.equals("")) {
-            listaIdFavoritos(favoritos);
-            /*Long[] listaId = listaIdFavoritos(favoritos);
-            for(int i = 0; i < listaId.length; i++){
-                if(listaId[i] == idSelecionado)
-                    achei = true;
-            }
-            if(!achei){
-                favoritos = favoritos + Long.toString(idSelecionado) + ',';
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putString("favoritos", favoritos);
-                editor.commit();
-                Toast.makeText(this, "Adicionado1!", Toast.LENGTH_SHORT).show();
-            }
+        int indice = 0;
+        while (indice < jsonArray.length() && !achei) {
+            if (jsonArray.getLong(indice) == idSelecionado)
+                achei = true;
             else
-                Toast.makeText(this, "O título já pertence aos favoritos", Toast.LENGTH_SHORT).show();*/
+                indice++;
         }
-        else {/*
-            favoritos = Long.toString(idSelecionado) + ',';
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString("favoritos", favoritos);
-            editor.commit();
-            Toast.makeText(this, "Adicionado2!", Toast.LENGTH_SHORT).show();*/
-        }
+        jsonArray.remove(indice);
+        prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+        SharedPreferences.Editor editor = prefs.edit();
+        favoritos = jsonArray.toString();
+        editor.putString("favoritos", favoritos);
+        editor.commit();
+        button.setText("Adicionar Favorito");
+        Toast.makeText(this, "Removido!", Toast.LENGTH_SHORT).show();
     }
 
-    private Long[] listaIdFavoritos(String stringFavoritos){
-        int qtdFavoritos = 0;
-        for(int i = 0; i < stringFavoritos.length(); i++){
-            if(stringFavoritos.charAt(i) == ',')
-                qtdFavoritos++;
-        }
-        Long[] lista = new Long[qtdFavoritos];
-        int inicio, fim;
-        inicio = 0;
-        fim = stringFavoritos.indexOf(',') - 1;
-       // for(int i = 0; i < qtdFavoritos; i++){
-            //lista[0] = Long.parseLong(stringFavoritos.substring(inicio, fim));
-            inicio = fim + 2;
-            stringFavoritos = stringFavoritos.substring(inicio);
-        Toast.makeText(this, stringFavoritos, Toast.LENGTH_SHORT).show();
-            inicio = 0;
-            fim = stringFavoritos.indexOf(',') -1;
-        //}
-        return lista;
+    public String bitmapToString(Bitmap bitmap){
+        ByteArrayOutputStream byteArrayOutputStream = new  ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG,100, byteArrayOutputStream);
+        byte[] byteArray = byteArrayOutputStream.toByteArray();
+        String stringByte = Base64.encodeToString(byteArray, Base64.DEFAULT);
+        return stringByte;
     }
 
-
+    public Bitmap stringToBitmap(String stringBitmap){
+        try {
+            byte [] encodeByte = Base64.decode(stringBitmap,Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+            return bitmap;
+        } catch(Exception e) {
+            e.getMessage();
+            return null;
+        }
+    }
 }

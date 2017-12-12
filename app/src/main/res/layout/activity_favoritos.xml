@@ -6,23 +6,10 @@
     android:layout_height="match_parent"
     tools:context="com.cabral.marinho.meusfilmes.FavoritosActivity">
 
-    <Button
-        android:id="@+id/buttonInicio"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Início"
-        android:textSize="18sp"
-        android:onClick="mostrarInicio"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/listViewFavoritos"
-        tools:layout_editor_absoluteX="158dp" />
-
     <ListView
         android:id="@+id/listViewFavoritos"
         android:layout_width="match_parent"
-        android:layout_height="470dp"
+        android:layout_height="match_parent"
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="8dp" />
 </android.support.constraint.ConstraintLayout>
