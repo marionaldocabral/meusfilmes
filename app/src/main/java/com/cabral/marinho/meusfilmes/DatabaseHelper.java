@@ -33,7 +33,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "   backdrop_path TEXT," +
                 "   adult INTEGER," +
                 "   overview TEXT," +
-                "   release_date TEXT);"
+                "   release_date TEXT," +
+                "   codigo TEXT);"
         );
     }
     @Override

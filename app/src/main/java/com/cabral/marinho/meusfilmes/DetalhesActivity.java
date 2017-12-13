@@ -8,10 +8,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
@@ -22,6 +21,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -33,11 +33,11 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class DetalhesActivity extends AppCompatActivity {
     private FilmeDao filmeDao;
     private ConstraintLayout layoutFundo;
     private LinearLayout layoutCamada;
-    private ImageView imageView;
+    private ImageButton imageButton;
     private TextView textTitulo;
     private TextView textAvaliacao;
     private TextView textIdioma;
@@ -57,6 +57,7 @@ public class DetalhesActivity extends AppCompatActivity {
     private TextView textData;
     private List<Filme> filmes;
     private String link = "https://image.tmdb.org/t/p/w500";
+    private String linkTrailler = "https://www.youtube.com/watch?v=";
     private Button button;
     private Long idSelecionado;
 
@@ -64,7 +65,7 @@ public class DetalhesActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        class DownloaderTask extends AsyncTask<String, Void, List<Bitmap>> {
+        class DownloaderTask extends AsyncTask<String, Void, List<String>> {
 
             ProgressDialog progressDialog;
 
@@ -77,42 +78,59 @@ public class DetalhesActivity extends AppCompatActivity {
             }
 
             @SuppressLint("NewApi")
-            protected void onPostExecute(List<Bitmap> imagens) {
-                boolean b1, b2;
-                if(imagens.get(0) != null) {
-                    Bitmap bitmap = imagens.get(0);
-                    imageView.setImageBitmap(bitmap);
+            protected void onPostExecute(List<String> downloads) {
+                boolean b1, b2, b3;
+                if(downloads.get(0) != null) {
+                    imageButton.setImageBitmap(stringToBitmap(downloads.get(0)));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
-                    String stringBitmap = bitmapToString(bitmap);
-                    editor.putString("poster" + idSelecionado, stringBitmap);
+                    editor.putString("poster" + idSelecionado, downloads.get(0));
                     editor.commit();
                     b1 = true;
                 }
                 else
                     b1 =false;
-                if(imagens.get(1) != null) {
-                    Bitmap bitmap = imagens.get(1);
-                    layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), bitmap));
+                if(downloads.get(1) != null) {
+                    layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), stringToBitmap(downloads.get(1))));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
-                    String stringBitmap = bitmapToString(bitmap);
-                    editor.putString("background" + idSelecionado, stringBitmap);
+                    editor.putString("background" + idSelecionado, downloads.get(1));
                     editor.commit();
                     b2 = true;
                 }
                 else
-                    b2 =false;
-                if(b1 && b2)
+                    b2 = false;
+                if(downloads.get(2) != null) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(downloads.get(2));
+                        JSONArray jsonArray = jsonObject.getJSONArray("results");
+                        JSONObject json = (JSONObject) jsonArray.get(0);
+                        String site = json.getString("site");
+                        String key = json.getString("key");
+                        Log.i("BAIXANDO LINK: ", "Site: " + site + "Key: " + key);
+                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("site" + idSelecionado, site);
+                        editor.putString("key" + idSelecionado, key);
+                        editor.commit();
+                        b3 = true;
+                    } catch (JSONException e) {
+                        b3 = false;
+                        e.printStackTrace();
+                    }
+                }
+                else
+                    b3 = false;
+                if(b1 && b2 && b3)
                     progressDialog.setMessage("Concluído!");
                 else
-                    progressDialog.setMessage("Falha ao baixar imagens!");
+                    progressDialog.setMessage("Falha ao baixar conteúdo!");
                 progressDialog.dismiss();
             }
 
             @Override
-            protected List<Bitmap> doInBackground(String... params) {
-                List<Bitmap> imagens = new ArrayList<>();
+            protected List<String> doInBackground(String... params) {
+                List<String> downloads = new ArrayList<>();
                 //baixar poster
                 try {
                     URL url = new URL(params[0]);
@@ -122,7 +140,8 @@ public class DetalhesActivity extends AppCompatActivity {
                     if (httpResponse == 200) {
                         Log.i("BAIXANDO IMAGEM " + 0 + ": ", "Conexão bem sucedida!");
                         Bitmap bitmap = BitmapFactory.decodeStream(httpURLConnection.getInputStream());
-                        imagens.add(bitmap);
+                        String stringImagem = bitmapToString(bitmap);
+                        downloads.add(stringImagem);
                     } else
                         Log.i("BAIXANDO IMAGEM " + 0 + ": ", "Falha na conexão!");
 
@@ -138,14 +157,41 @@ public class DetalhesActivity extends AppCompatActivity {
                     if (httpResponse == 200) {
                         Log.i("BAIXANDO IMAGEM " + 1 + ": ", "Conexão bem sucedida!");
                         Bitmap bitmap = BitmapFactory.decodeStream(httpURLConnection.getInputStream());
-                        imagens.add(bitmap);
+                        String stringImagem = bitmapToString(bitmap);
+                        downloads.add(stringImagem);
                     } else
                         Log.i("BAIXANDO IMAGEM " + 1 + ": ", "Falha na conexão!");
 
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                return imagens;
+                //baixar link do trailler
+                try {
+                    URL url = new URL("https://api.themoviedb.org/3/movie/" + params[2] + "/videos?api_key=bad51705c7756f9ffdc7d3dc37b7aad2&language=pt-BR");
+                    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                    httpURLConnection.connect();
+                    int httpResponse = httpURLConnection.getResponseCode();
+                    if (httpResponse == 200) {
+                        Log.i("BAIXANDO LINK: ", "Conexão bem sucedida!");
+                        String json = getString(httpURLConnection.getInputStream());
+                        downloads.add(json);
+                    } else
+                        Log.i("BAIXANDO LINK: ", "Falha na conexão!");
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return downloads;
+            }
+
+            private String getString(InputStream in) throws IOException {
+                BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
+                StringBuilder str = new StringBuilder();
+                String line = null;
+                while ((line = buffer.readLine()) != null) {
+                    str.append(line);
+                }
+                return str.toString();
             }
         }
         super.onCreate(savedInstanceState);
@@ -154,7 +200,7 @@ public class DetalhesActivity extends AppCompatActivity {
         layoutCamada = (LinearLayout)findViewById(R.id.layoutCamada);
         layoutCamada.setBackgroundColor(Color.BLACK);
         layoutCamada.getBackground().setAlpha(200);
-        imageView = (ImageView)findViewById(R.id.imageView);
+        imageButton = (ImageButton) findViewById(R.id.imageButton);
         textTitulo = (TextView)findViewById(R.id.textTitulo);
         textAvaliacao = (TextView)findViewById(R.id.textAvaliacao);
         textIdioma = (TextView)findViewById(R.id.textIdioma);
@@ -216,19 +262,33 @@ public class DetalhesActivity extends AppCompatActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
         String stringBackground = prefs.getString("background" + idSelecionado, "");
         String stringPoster = prefs.getString("poster" + idSelecionado, "");
-        if(stringBackground.equals("")  || stringPoster.equals("")){
+        String key = prefs.getString("key" + idSelecionado, "");
+        if(stringBackground.equals("")  || stringPoster.equals("") || key.equals("")){
             DownloaderTask downloaderTask =  new DownloaderTask();
-            downloaderTask.execute(link + filme.getPoster_path(), link + filme.getBackdrop_path());
+            downloaderTask.execute(link + filme.getPoster_path(), link + filme.getBackdrop_path(), filme.getCodigo());
         }
         else{
             Bitmap bitmapPoster = stringToBitmap(stringPoster);
             Bitmap bitmapBackground = stringToBitmap(stringBackground);
-            imageView.setImageBitmap(bitmapPoster);
+            imageButton.setImageBitmap(bitmapPoster);
             layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), bitmapBackground));
         }
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setTitle("Início");
+    }
+
+    public void mostrarTrailler(View v) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
+        String site = prefs.getString("site" + idSelecionado, "");
+        String key = prefs.getString("key" + idSelecionado, "");
+        if(site.equals("YouTube")){
+            Uri uri = Uri.parse(linkTrailler + key);
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            startActivity(intent);
+        }
+        else
+            Toast.makeText(this, "Não disponível!", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -324,7 +384,7 @@ public class DetalhesActivity extends AppCompatActivity {
         editor.putString("favoritos", favoritos);
         editor.commit();
         button.setText("Remover Favorito");
-        Toast.makeText(this, "Adicionado!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Adicionado aos favoritos!", Toast.LENGTH_SHORT).show();
     }
 
     private boolean eFavorito() throws JSONException {
@@ -359,7 +419,7 @@ public class DetalhesActivity extends AppCompatActivity {
         editor.putString("favoritos", favoritos);
         editor.commit();
         button.setText("Adicionar Favorito");
-        Toast.makeText(this, "Removido!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Removido dos favoritos!", Toast.LENGTH_SHORT).show();
     }
 
     public String bitmapToString(Bitmap bitmap){

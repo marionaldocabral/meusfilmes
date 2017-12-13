@@ -32,7 +32,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -46,7 +49,7 @@ public class InicioActivity extends AppCompatActivity {
     private Button buttonFavotitos;
     private Button buttonCreditos;
     private List<Filme> filmes = new ArrayList<Filme>();
-    private String link = "https://api.themoviedb.org/3/discover/movie?api_key=bad51705c7756f9ffdc7d3dc37b7aad2&sort_by=popularity.desc&language=pt-br&page=";
+    private String link = "https://api.themoviedb.org/3/discover/movie?api_key=bad51705c7756f9ffdc7d3dc37b7aad2&sort_by=popularity.desc&language=pt-BR&page=";
     private int httpResponse;
     private boolean atualizou;
     private static final int qtdPaginas = 25;
@@ -130,8 +133,7 @@ public class InicioActivity extends AppCompatActivity {
             }
 
             private String getString(InputStream in) throws IOException {
-                BufferedReader buffer = new BufferedReader(new
-                        InputStreamReader(in));
+                BufferedReader buffer = new BufferedReader(new InputStreamReader(in));
                 StringBuilder str = new StringBuilder();
                 String line = null;
                 while ((line = buffer.readLine()) != null) {

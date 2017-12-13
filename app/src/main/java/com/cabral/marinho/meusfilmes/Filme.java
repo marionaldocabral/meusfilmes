@@ -27,12 +27,13 @@ public class Filme {
     private int adult;
     private String overview;
     private String release_date;
+    private String codigo;
 
     public Filme(){
 
     }
 
-    public Filme(long vote_count, long id, int video, double vote_average, String title, long popularity, String poster_path, String original_language, String original_title, String genre_ids, String backdrop_path, int adult, String overview, String release_date){
+    public Filme(long vote_count, long id, int video, double vote_average, String title, long popularity, String poster_path, String original_language, String original_title, String genre_ids, String backdrop_path, int adult, String overview, String release_date, String codigo){
         this.vote_count = vote_count;
         this.id = id;
         this.video = video;
@@ -47,14 +48,13 @@ public class Filme {
         this.adult = adult;
         this.overview = overview;
         this.release_date = release_date;
+        this.codigo = codigo;
     }
 
     public static Filme fromJSON(JSONObject obj) throws JSONException {
         long vote_count = Long.parseLong(obj.getString("vote_count"));
 
         long id = -1;
-        if(obj.has("id"))
-            id = obj.getLong("id");
 
         boolean r1 = obj.getBoolean("video");
         int video;
@@ -80,8 +80,9 @@ public class Filme {
 
         String overview = obj.getString("overview");
         String release_date = obj.getString("release_date");
+        String codigo = obj.getString("id");
 
-        return new Filme(vote_count, id, video, vote_average, title, popularity, poster_path, original_language, original_title, genre_ids, backdrop_path, adult, overview, release_date);
+        return new Filme(vote_count, id, video, vote_average, title, popularity, poster_path, original_language, original_title, genre_ids, backdrop_path, adult, overview, release_date, codigo);
     }
 
     public long getVote_count(){
@@ -139,6 +140,8 @@ public class Filme {
     public String getRelease_date(){
         return this.release_date;
     }
+
+    public String getCodigo(){
+        return this.codigo;
+    }
 }
-
-

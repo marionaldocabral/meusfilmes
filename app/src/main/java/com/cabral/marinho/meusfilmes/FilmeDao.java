@@ -50,7 +50,8 @@ public class FilmeDao {
             int adult = cursor.getInt(11);
             String overview = cursor.getString(12);
             String release_date = cursor.getString(13);
-            Filme Filme = new Filme(vote_count, id, video, vote_average, title, popularity, poster_path, original_language, original_title, genre_ids, backdrop_path, adult, overview, release_date);
+            String codigo = cursor.getString(14);
+            Filme Filme = new Filme(vote_count, id, video, vote_average, title, popularity, poster_path, original_language, original_title, genre_ids, backdrop_path, adult, overview, release_date, codigo);
             lista.add(Filme);
             cursor.moveToNext();
         }
@@ -74,6 +75,7 @@ public class FilmeDao {
         cv.put("adult", filme.getAdult());
         cv.put("overview", filme.getOverview());
         cv.put("release_date", filme.getRelease_date());
+        cv.put("codigo", filme.getCodigo());
 
         long id = db.insert("Filme", null, cv);
         Log.d("teste", "inserido Filme com id = " + id);
@@ -81,5 +83,26 @@ public class FilmeDao {
 
     public void remove(long id) {
         db.delete("Filme", "_id = " + id, null);
+    }
+
+    public void atualize(Filme filme)
+    {
+        ContentValues cv = new ContentValues();
+
+        cv.put("vote_count", filme.getVote_count());
+        cv.put("video", filme.getVideo());
+        cv.put("vote_average", filme.getVote_average());
+        cv.put("title", filme.getTitle());
+        cv.put("popularity", filme.getPopularity());
+        cv.put("poster_path", filme.getPoster_path());
+        cv.put("original_language", filme.getOriginal_language());
+        cv.put("original_title", filme.getOriginal_title());
+        cv.put("genre_ids", filme.getGenre_ids());
+        cv.put("backdrop_path", filme.getBackdrop_path());
+        cv.put("adult", filme.getAdult());
+        cv.put("overview", filme.getOverview());
+        cv.put("release_date", filme.getRelease_date());
+        cv.put("codigo", filme.getCodigo());
+        db.update("Filme", cv, "_id = " + filme.getId(), null);
     }
 }
