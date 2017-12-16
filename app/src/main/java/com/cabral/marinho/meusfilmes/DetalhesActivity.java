@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -80,7 +81,7 @@ public class DetalhesActivity extends AppCompatActivity {
             @SuppressLint("NewApi")
             protected void onPostExecute(List<String> downloads) {
                 boolean b1, b2, b3;
-                if(downloads.get(0) != null) {
+                if(downloads.size() > 0 && downloads.get(0) != null && !downloads.get(0).equals("")) {
                     imageButton.setImageBitmap(stringToBitmap(downloads.get(0)));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
@@ -90,7 +91,7 @@ public class DetalhesActivity extends AppCompatActivity {
                 }
                 else
                     b1 =false;
-                if(downloads.get(1) != null) {
+                if(downloads.size() > 1 && downloads.get(1) != null  && !downloads.get(0).equals("")) {
                     layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), stringToBitmap(downloads.get(1))));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
@@ -100,7 +101,7 @@ public class DetalhesActivity extends AppCompatActivity {
                 }
                 else
                     b2 = false;
-                if(downloads.get(2) != null) {
+                if(downloads.size() > 2 && downloads.get(2) != null  && !downloads.get(0).equals("")) {
                     try {
                         JSONObject jsonObject = new JSONObject(downloads.get(2));
                         JSONArray jsonArray = jsonObject.getJSONArray("results");
@@ -124,8 +125,9 @@ public class DetalhesActivity extends AppCompatActivity {
                 if(b1 && b2 && b3)
                     progressDialog.setMessage("Concluído!");
                 else
-                    progressDialog.setMessage("Falha ao baixar conteúdo!");
+                    Toast.makeText(DetalhesActivity.this, "Falha ao baixar conteúdo! Verifique suas conexões.", Toast.LENGTH_LONG).show();
                 progressDialog.dismiss();
+                DetalhesActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
             }
 
             @Override
@@ -264,6 +266,7 @@ public class DetalhesActivity extends AppCompatActivity {
         String stringPoster = prefs.getString("poster" + idSelecionado, "");
         String key = prefs.getString("key" + idSelecionado, "");
         if(stringBackground.equals("")  || stringPoster.equals("") || key.equals("")){
+            DetalhesActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
             DownloaderTask downloaderTask =  new DownloaderTask();
             downloaderTask.execute(link + filme.getPoster_path(), link + filme.getBackdrop_path(), filme.getCodigo());
         }

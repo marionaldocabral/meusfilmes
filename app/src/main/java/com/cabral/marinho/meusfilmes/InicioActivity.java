@@ -1,10 +1,14 @@
 package com.cabral.marinho.meusfilmes;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -13,6 +17,7 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -52,8 +57,9 @@ public class InicioActivity extends AppCompatActivity {
     private String link = "https://api.themoviedb.org/3/discover/movie?api_key=bad51705c7756f9ffdc7d3dc37b7aad2&sort_by=popularity.desc&language=pt-BR&page=";
     private int httpResponse;
     private boolean atualizou;
-    private static final int qtdPaginas = 25;
+    private static final int qtdPag = 25;
 
+    @SuppressLint("WrongConstant")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,9 +75,10 @@ public class InicioActivity extends AppCompatActivity {
 
             @Override
             protected void onPreExecute() {
+                InicioActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
                 progressDialog = new ProgressDialog(InicioActivity.this);
-                progressDialog.setTitle("Aguarde");
-                progressDialog.setMessage("Atualizando...");
+                progressDialog.setTitle("Atualizando");
+                progressDialog.setMessage("Aguarde...");
                 progressDialog.show();
             }
 
@@ -91,18 +98,28 @@ public class InicioActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                     }
-                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(InicioActivity.this);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    atualizou = true;
-                    editor.putBoolean("atualizou", atualizou);
-                    editor.commit();
-                    progressDialog.setMessage("Concluído!");
-                    progressDialog.dismiss();
+                    if(qtdPaginas == qtdPag){
+                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(InicioActivity.this);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        atualizou = true;
+                        editor.putBoolean("atualizou", atualizou);
+                        editor.commit();
+                        progressDialog.setMessage("Concluído!");
+                        progressDialog.dismiss();
+                    }
+                    else{
+                        progressDialog.dismiss();
+                        Toast.makeText(InicioActivity.this, "Falha ao atualizar: a base de dados está incompleta", Toast.LENGTH_LONG).show();
+                    }
                 }
                 else{
-                    progressDialog.setMessage("Falha ao atualizar!");
                     progressDialog.dismiss();
+                    buttonLista.setEnabled(false);
+                    buttonHistorico.setEnabled(false);
+                    buttonFavotitos.setEnabled(false);
+                    Toast.makeText(InicioActivity.this, "Falha ao atualizar! Verifique suas conexões de rede.", Toast.LENGTH_LONG).show();
                 }
+                InicioActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
             }
 
             @Override
@@ -122,7 +139,6 @@ public class InicioActivity extends AppCompatActivity {
                             paginas.add(new JSONObject(json));
                         } else
                             Log.i("BAIXANDO PÁGINA " + i + ": ", "Falha na conexão!");
-
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (JSONException e) {
@@ -147,10 +163,9 @@ public class InicioActivity extends AppCompatActivity {
         if(!atualizou){
             filmeDao = new FilmeDao(this);
             filmeDao.open();
-            String[] parametros = new String[qtdPaginas];
-            for(int i = 0; i < qtdPaginas; i++){
+            String[] parametros = new String[qtdPag];
+            for(int i = 0; i < qtdPag; i++)
                 parametros[i] = link + Integer.toString(i + 1);
-            }
             DownloaderTask downloaderTask =  new DownloaderTask();
             downloaderTask.execute(parametros);
         }

@@ -3,6 +3,7 @@ package com.cabral.marinho.meusfilmes;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
@@ -39,6 +40,8 @@ public class ListaActivity extends AppCompatActivity {
         filmeDao = new FilmeDao(this);
         filmeDao.open();
         filmes = filmeDao.getAll();
+        if(filmes.size() == 0)
+            Toast.makeText(this, "Nenhum título encontrado.", Toast.LENGTH_LONG).show();
         String[] titulos = new String[filmes.size()];
         for(int i = 0; i < filmes.size(); i++){
             titulos[i] = Integer.toString(i + 1) + ". " + filmes.get(i).getTitle();
@@ -51,7 +54,6 @@ public class ListaActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
                 String historico = prefs.getString("historico", "[]");
-
                 try {
                     jsonArray = new JSONArray(historico);
                     removeAnteriores(filmes.get(position).getId());
@@ -59,8 +61,9 @@ public class ListaActivity extends AppCompatActivity {
                         jsonArray.remove(0);
                     JSONArray tempArray = new JSONArray();
                     tempArray.put(filmes.get(position).getId());
-                    for(int i = 0; i < jsonArray.length(); i++)
-                        tempArray.put(jsonArray.getLong(i));
+                    if(jsonArray.length() > 0)
+                        for(int i = 0; i < jsonArray.length(); i++)
+                            tempArray.put(jsonArray.getLong(i));
                     prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
                     historico = tempArray.toString();
@@ -79,7 +82,6 @@ public class ListaActivity extends AppCompatActivity {
         });
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setTitle("Início");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)

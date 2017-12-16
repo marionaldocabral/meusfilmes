@@ -14,34 +14,27 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
             <Space
                 android:layout_width="match_parent"
                 android:layout_height="30dp" />
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/imageCreditos"
-                android:layout_width="match_parent"
-                android:layout_height="202dp"
-                android:layout_marginBottom="32dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                app:layout_constraintBottom_toTopOf="@+id/textCreditos"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/creditos" />
+                android:layout_width="wrap_content"
+                android:layout_height="200dp"
+                android:background="@drawable/capa_transparente"
+                android:scaleType="fitCenter"
+                android:onClick="seguirTheMovie"
+                app:srcCompat="@drawable/themoviedb" />
 
             <TextView
                 android:id="@+id/textCreditos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:text="Créditos"
+                android:text="\nCréditos\n"
                 android:textAlignment="center"
                 android:textColor="@android:color/white"
                 android:textSize="24sp"
@@ -56,9 +49,7 @@
                 android:id="@+id/textView3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                android:layout_marginTop="8dp"
-                android:text='Todas informações contidas neste app são fornecidas por The Movie DB. Para mais informações, acessar "www.themoviedb.org/".\nEste aplicativo foi desenvolvido por Marinho, Matheus e Osvaldo :-) '
+                android:text='Todas informações contidas neste app são fornecidas por The Movie DB. Para mais informações, acessar "www.themoviedb.org/".\nEste aplicativo foi desenvolvido por Marinho e Osvaldo :-) '
                 android:textAlignment="center"
                 android:textColor="@android:color/white"
                 app:layout_constraintBottom_toBottomOf="@+id/textCreditos"

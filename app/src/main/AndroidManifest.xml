@@ -11,7 +11,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
         <activity android:name=".InicioActivity"
             android:configChanges="orientation">
             <intent-filter>
@@ -20,11 +20,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ListaActivity" />
-        <activity android:name=".HistoricoActivity" />
-        <activity android:name=".FavoritosActivity" />
-        <activity android:name=".CreditosActivity" />
-        <activity android:name=".DetalhesActivity"></activity>
+        <activity android:name=".ListaActivity"
+            android:label="Lista" />
+        <activity android:name=".HistoricoActivity"
+            android:label="Histórico"/>
+        <activity android:name=".FavoritosActivity"
+            android:label="Favoritos"/>
+        <activity android:name=".CreditosActivity"
+            android:label="Créditos"/>
+        <activity android:name=".DetalhesActivity"
+            android:label="Créditos"></activity>
     </application>
 
 </manifest>
