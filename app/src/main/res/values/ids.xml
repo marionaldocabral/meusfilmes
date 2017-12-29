@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="menufavoritar" type="id" />
+    <item name="menudesfavoritar" type="id" />
+    <item name="menu_item_share" type="id" />
+    <item name="menu_inicio" type="id" />
+</resources>

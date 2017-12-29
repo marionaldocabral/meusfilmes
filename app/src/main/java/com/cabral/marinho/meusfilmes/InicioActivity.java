@@ -1,50 +1,31 @@
 package com.cabral.marinho.meusfilmes;
 
 import android.annotation.SuppressLint;
-import android.app.ActionBar;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
-import android.graphics.drawable.ColorDrawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-
-import static android.widget.Toast.LENGTH_SHORT;
 
 public class InicioActivity extends AppCompatActivity {
 
@@ -56,8 +37,8 @@ public class InicioActivity extends AppCompatActivity {
     private List<Filme> filmes = new ArrayList<Filme>();
     private String link = "https://api.themoviedb.org/3/discover/movie?api_key=bad51705c7756f9ffdc7d3dc37b7aad2&sort_by=popularity.desc&language=pt-BR&page=";
     private int httpResponse;
-    private boolean atualizou;
     private static final int qtdPag = 25;
+    private static final int freqAtualizacao = 7; //em dias
 
     @SuppressLint("WrongConstant")
     @Override
@@ -84,14 +65,22 @@ public class InicioActivity extends AppCompatActivity {
 
             protected void onPostExecute(List<JSONObject> paginas) {
                 int qtdPaginas = paginas.size();
-                if(qtdPaginas > 0){
-                    removeFilmes();
+                if(qtdPaginas == qtdPag){
+                    boolean atualizar = true;
+                    Long id = Long.valueOf(1);
+                    if(qtdFilmes() == 0)
+                        atualizar = false;
                     for(int i = 0; i < qtdPaginas; i++){
                         try {
                             JSONArray jsonArray = paginas.get(i).getJSONArray("results");
                             for (int j = 0; j < jsonArray.length(); j++) {
                                 JSONObject obj = jsonArray.getJSONObject(j);
-                                filmeDao.insert(Filme.fromJSON(obj));
+                                if(atualizar) {
+                                    filmeDao.atualize(Filme.fromJSON(obj), id);
+                                    id++;
+                                }
+                                else
+                                    filmeDao.insert(Filme.fromJSON(obj));
                             }
                         }
                         catch (JSONException e) {
@@ -101,8 +90,8 @@ public class InicioActivity extends AppCompatActivity {
                     if(qtdPaginas == qtdPag){
                         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(InicioActivity.this);
                         SharedPreferences.Editor editor = prefs.edit();
-                        atualizou = true;
-                        editor.putBoolean("atualizou", atualizou);
+                        Data data = new Data();
+                        editor.putString("dataAtualizacao", data.toString());
                         editor.commit();
                         progressDialog.setMessage("Concluído!");
                         progressDialog.dismiss();
@@ -159,8 +148,10 @@ public class InicioActivity extends AppCompatActivity {
             }
         }
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        atualizou = prefs.getBoolean("atualizou", false);
-        if(!atualizou){
+        String stringData = prefs.getString("dataAtualizacao", "00/00/0000");
+        Data dataAnterior = new Data(stringData);
+        Data dataAtual = new Data();
+        if(dataAtual.compare(dataAnterior) >= freqAtualizacao){
             filmeDao = new FilmeDao(this);
             filmeDao.open();
             String[] parametros = new String[qtdPag];
@@ -179,7 +170,6 @@ public class InicioActivity extends AppCompatActivity {
     }
 
     public void mostrarLista(View v) {
-        Bundle bundle = new Bundle();
         Intent intent = new Intent(InicioActivity.this, ListaActivity.class);
         startActivity(intent);
     }
@@ -207,5 +197,10 @@ public class InicioActivity extends AppCompatActivity {
                 filmeDao.remove(id);
             }
         }
+    }
+
+    private int qtdFilmes(){
+        List<Filme> filmes = filmeDao.getAll();
+        return filmes.size();
     }
 }

@@ -1,5 +1,6 @@
 package com.cabral.marinho.meusfilmes;
 
+import android.annotation.SuppressLint;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,6 +10,8 @@ import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -30,6 +33,7 @@ public class ListaActivity extends AppCompatActivity {
     private ArrayAdapter<String> adapter;
     private List<Filme> filmes;
     private JSONArray jsonArray;
+    private Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,14 +60,14 @@ public class ListaActivity extends AppCompatActivity {
                 String historico = prefs.getString("historico", "[]");
                 try {
                     jsonArray = new JSONArray(historico);
-                    removeAnteriores(filmes.get(position).getId());
+                    removeAnteriores(filmes.get(position).getCodigo());
                     if(jsonArray.length() > 19)
                         jsonArray.remove(0);
                     JSONArray tempArray = new JSONArray();
-                    tempArray.put(filmes.get(position).getId());
+                    tempArray.put(filmes.get(position).getCodigo());
                     if(jsonArray.length() > 0)
                         for(int i = 0; i < jsonArray.length(); i++)
-                            tempArray.put(jsonArray.getLong(i));
+                            tempArray.put(jsonArray.getString(i));
                     prefs = PreferenceManager.getDefaultSharedPreferences(ListaActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
                     historico = tempArray.toString();
@@ -80,27 +84,14 @@ public class ListaActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void removeAnteriores(Long id) throws JSONException {
+    private void removeAnteriores(String codigo) throws JSONException {
         for(int i = 0; i < jsonArray.length(); i++){
-            if(jsonArray.getLong(i) == id)
+            if(jsonArray.getString(i).equals(codigo))
                 jsonArray.remove(i);
         }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) { //Botão adicional na ToolBar
-        switch (item.getItemId()) {
-            case android.R.id.home:  //ID do seu botão (gerado automaticamente pelo android, usando como está, deve funcionar
-                finish();
-                break;
-            default:break;
-        }
-        return true;
     }
 
     @Override
@@ -109,4 +100,22 @@ public class ListaActivity extends AppCompatActivity {
             filmeDao.close();
         super.onDestroy();
     }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        this.menu = menu;
+        inflater.inflate(R.menu.menuvoltar, menu);
+        return true;
+    }
+
+    @SuppressLint("NewApi")
+    public boolean onOptionsItemSelected (MenuItem item) {
+        if (item.getItemId() == R.id.menu_inicio){
+            startActivity(new Intent(this, InicioActivity.class));
+            finish();
+            return true;
+        }
+        return false;
+    }
+
 }

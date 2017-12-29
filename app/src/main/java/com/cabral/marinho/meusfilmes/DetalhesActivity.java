@@ -19,12 +19,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -59,9 +62,13 @@ public class DetalhesActivity extends AppCompatActivity {
     private List<Filme> filmes;
     private String link = "https://image.tmdb.org/t/p/w500";
     private String linkTrailler = "https://www.youtube.com/watch?v=";
-    private Button button;
-    private Long idSelecionado;
+    private String codigo;
+    private Menu menu;
+    private String compartilhar = "https://www.themoviedb.org/movie/";
+    private ProgressBar progressBar;
+    private TextView pAvaliacao;
 
+    @SuppressLint("WrongViewCast")
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +79,7 @@ public class DetalhesActivity extends AppCompatActivity {
 
             @Override
             protected void onPreExecute() {
+                DetalhesActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
                 progressDialog = new ProgressDialog(DetalhesActivity.this);
                 progressDialog.setTitle("Aguarde");
                 progressDialog.setMessage("Baixando...");
@@ -85,7 +93,7 @@ public class DetalhesActivity extends AppCompatActivity {
                     imageButton.setImageBitmap(stringToBitmap(downloads.get(0)));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("poster" + idSelecionado, downloads.get(0));
+                    editor.putString("poster" + codigo, downloads.get(0));
                     editor.commit();
                     b1 = true;
                 }
@@ -95,7 +103,7 @@ public class DetalhesActivity extends AppCompatActivity {
                     layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), stringToBitmap(downloads.get(1))));
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                     SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("background" + idSelecionado, downloads.get(1));
+                    editor.putString("background" + codigo, downloads.get(1));
                     editor.commit();
                     b2 = true;
                 }
@@ -111,8 +119,8 @@ public class DetalhesActivity extends AppCompatActivity {
                         Log.i("BAIXANDO LINK: ", "Site: " + site + "Key: " + key);
                         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
                         SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString("site" + idSelecionado, site);
-                        editor.putString("key" + idSelecionado, key);
+                        editor.putString("site" + codigo, site);
+                        editor.putString("key" + codigo, key);
                         editor.commit();
                         b3 = true;
                     } catch (JSONException e) {
@@ -122,10 +130,12 @@ public class DetalhesActivity extends AppCompatActivity {
                 }
                 else
                     b3 = false;
-                if(b1 && b2 && b3)
+                if(b1 && b2)
                     progressDialog.setMessage("Concluído!");
                 else
                     Toast.makeText(DetalhesActivity.this, "Falha ao baixar conteúdo! Verifique suas conexões.", Toast.LENGTH_LONG).show();
+                if(!b3)
+                    Toast.makeText(DetalhesActivity.this, "Trailer indisponível.", Toast.LENGTH_LONG).show();
                 progressDialog.dismiss();
                 DetalhesActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
             }
@@ -210,7 +220,8 @@ public class DetalhesActivity extends AppCompatActivity {
         textGeneros = (TextView)findViewById(R.id.textGeneros);
         textSinopse = (TextView)findViewById(R.id.textSinopse);
         textData = (TextView)findViewById(R.id.textData);
-        button = (Button)findViewById(R.id.button);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        pAvaliacao = (TextView)  findViewById(R.id.myTextProgress);
         filmeDao = new FilmeDao(this);
         filmeDao.open();
         filmes = filmeDao.getAll();
@@ -225,14 +236,14 @@ public class DetalhesActivity extends AppCompatActivity {
                 indice++;
         }
         Filme filme = filmes.get(indice);
-        idSelecionado = filme.getId();
+        codigo = filme.getCodigo();
         textTitulo.setText(filme.getTitle());
         int avaliacao = (int)(filme.getVote_average() * 10);
-        textAvaliacao.setText("Avaliação dos usuários: " + avaliacao + "%");
+        textAvaliacao.setText("Avaliação dos usuários: ");
         String idioma = filme.getOriginal_language();
         if(idioma.equals("en"))
             idioma = "Inglês";
-        else if(idioma.equals("pt") || idioma.equals("pt"))
+        else if(idioma.equals("pt") || idioma.equals("pt-BR"))
             idioma = "Português";
         else if (idioma.equals("es"))
             idioma = "Espanhol";
@@ -254,19 +265,14 @@ public class DetalhesActivity extends AppCompatActivity {
         textGeneros.setText(generos);
         textSinopse.setText(filme.getOverview() + "\n");
         textData.setText("Lançamento: " + dataConvertida(filme.getRelease_date()));
-        try {
-            if(eFavorito()){
-                button.setText("Remover Favorito");
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        progressBar.setMax(100);
+        progressBar.setProgress(avaliacao);
+        pAvaliacao.setText(avaliacao + "%");
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
-        String stringBackground = prefs.getString("background" + idSelecionado, "");
-        String stringPoster = prefs.getString("poster" + idSelecionado, "");
-        String key = prefs.getString("key" + idSelecionado, "");
-        if(stringBackground.equals("")  || stringPoster.equals("") || key.equals("")){
-            DetalhesActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        String stringBackground = prefs.getString("background" + codigo, "");
+        String stringPoster = prefs.getString("poster" + codigo, "");
+        String key = prefs.getString("key" + codigo, "");
+        if(stringBackground.equals("")  || stringPoster.equals("")){
             DownloaderTask downloaderTask =  new DownloaderTask();
             downloaderTask.execute(link + filme.getPoster_path(), link + filme.getBackdrop_path(), filme.getCodigo());
         }
@@ -276,15 +282,12 @@ public class DetalhesActivity extends AppCompatActivity {
             imageButton.setImageBitmap(bitmapPoster);
             layoutFundo.setBackground(new BitmapDrawable(getApplicationContext().getResources(), bitmapBackground));
         }
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setTitle("Início");
     }
 
     public void mostrarTrailler(View v) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
-        String site = prefs.getString("site" + idSelecionado, "");
-        String key = prefs.getString("key" + idSelecionado, "");
+        String site = prefs.getString("site" + codigo, "");
+        String key = prefs.getString("key" + codigo, "");
         if(site.equals("YouTube")){
             Uri uri = Uri.parse(linkTrailler + key);
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
@@ -292,18 +295,6 @@ public class DetalhesActivity extends AppCompatActivity {
         }
         else
             Toast.makeText(this, "Não disponível!", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) { //Botão adicional na ToolBar
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                startActivity(new Intent(this, InicioActivity.class));
-                finish();
-                break;
-            default:break;
-        }
-        return true;
     }
 
     private  String getGeneroPorId(String id) {
@@ -367,27 +358,21 @@ public class DetalhesActivity extends AppCompatActivity {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void onClick(View v) throws JSONException {
-        if(!eFavorito()){
-            adicionaFavorito();
-        }
-        else
-            removeFavorito();
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void adicionaFavorito() throws JSONException {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
         String favoritos = prefs.getString("favoritos", "[]");
         JSONArray jsonArray = new JSONArray(favoritos);
-        jsonArray.put(idSelecionado);
+        jsonArray.put(codigo);
         prefs = PreferenceManager.getDefaultSharedPreferences(DetalhesActivity.this);
         SharedPreferences.Editor editor = prefs.edit();
         favoritos = jsonArray.toString();
         editor.putString("favoritos", favoritos);
         editor.commit();
-        button.setText("Remover Favorito");
         Toast.makeText(this, "Adicionado aos favoritos!", Toast.LENGTH_SHORT).show();
+        menu.clear();
+        getMenuInflater().inflate(R.menu.menucompartilhar, menu);
+        getMenuInflater().inflate(R.menu.menudesfavoritar, menu);
+        getMenuInflater().inflate(R.menu.menuvoltar, menu);
     }
 
     private boolean eFavorito() throws JSONException {
@@ -396,7 +381,7 @@ public class DetalhesActivity extends AppCompatActivity {
         JSONArray jsonArray = new JSONArray(favoritos);
         boolean estaNaLista = false;
         for(int i = 0; i < jsonArray.length(); i++){
-            if(jsonArray.getLong(i) == idSelecionado)
+            if(jsonArray.getString(i).equals(codigo))
                 estaNaLista = true;
         }
         return estaNaLista;
@@ -410,7 +395,7 @@ public class DetalhesActivity extends AppCompatActivity {
         boolean achei = false;
         int indice = 0;
         while (indice < jsonArray.length() && !achei) {
-            if (jsonArray.getLong(indice) == idSelecionado)
+            if (jsonArray.getString(indice).equals(codigo))
                 achei = true;
             else
                 indice++;
@@ -421,8 +406,11 @@ public class DetalhesActivity extends AppCompatActivity {
         favoritos = jsonArray.toString();
         editor.putString("favoritos", favoritos);
         editor.commit();
-        button.setText("Adicionar Favorito");
         Toast.makeText(this, "Removido dos favoritos!", Toast.LENGTH_SHORT).show();
+        menu.clear();
+        getMenuInflater().inflate(R.menu.menucompartilhar, menu);
+        getMenuInflater().inflate(R.menu.menufavoritar, menu);
+        getMenuInflater().inflate(R.menu.menuvoltar, menu);
     }
 
     public String bitmapToString(Bitmap bitmap){
@@ -441,6 +429,60 @@ public class DetalhesActivity extends AppCompatActivity {
         } catch(Exception e) {
             e.getMessage();
             return null;
+        }
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        this.menu = menu;
+        inflater.inflate(R.menu.menucompartilhar, menu);
+        try {
+            if(eFavorito()){
+                inflater.inflate(R.menu.menudesfavoritar, menu);
+
+            }else{
+                inflater.inflate(R.menu.menufavoritar, menu);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        inflater.inflate(R.menu.menuvoltar, menu);
+
+        return true;
+    }
+
+    @SuppressLint("NewApi")
+    public boolean onOptionsItemSelected (MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.menufavoritar:
+                try {
+                    adicionaFavorito();
+                    return true;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            case R.id.menudesfavoritar:
+                try {
+                    removeFavorito();
+                    return true;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            case R.id.menu_inicio:
+                startActivity(new Intent(this, InicioActivity.class));
+                finish();
+                return true;
+
+            case R.id.menu_item_share:
+                Intent myIntent = new Intent(Intent.ACTION_SEND);
+                myIntent.setType("text/plain");
+                String sharesub = "Confira os detalhes do filme \"" + textTitulo.getText() + "\" no site: " + compartilhar + codigo;
+                myIntent.putExtra(Intent.EXTRA_TEXT, sharesub);
+                startActivity(Intent.createChooser(myIntent, "Compartilhar usando:"));
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }

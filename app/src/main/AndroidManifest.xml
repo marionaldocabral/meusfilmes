@@ -29,7 +29,7 @@
         <activity android:name=".CreditosActivity"
             android:label="Créditos"/>
         <activity android:name=".DetalhesActivity"
-            android:label="Créditos"></activity>
+            android:label="Detalhes"></activity>
     </application>
 
 </manifest>

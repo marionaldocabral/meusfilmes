@@ -85,7 +85,7 @@ public class FilmeDao {
         db.delete("Filme", "_id = " + id, null);
     }
 
-    public void atualize(Filme filme)
+    public void atualize(Filme filme, Long id)
     {
         ContentValues cv = new ContentValues();
 
@@ -103,6 +103,7 @@ public class FilmeDao {
         cv.put("overview", filme.getOverview());
         cv.put("release_date", filme.getRelease_date());
         cv.put("codigo", filme.getCodigo());
-        db.update("Filme", cv, "_id = " + filme.getId(), null);
+        db.update("Filme", cv, "_id = " + Long.toString(id), null);
+        Log.d("teste", "Atualizado Filme com id = " + id);
     }
 }

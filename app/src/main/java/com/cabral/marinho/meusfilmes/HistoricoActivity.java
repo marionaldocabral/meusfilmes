@@ -1,10 +1,13 @@
 package com.cabral.marinho.meusfilmes;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -25,13 +28,15 @@ public class HistoricoActivity extends AppCompatActivity {
     private ArrayAdapter<String> adapter;
     private FilmeDao filmeDao;
     private JSONArray jsonArray;
+    private Long[] listaId;
+    private Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_historico);
-        buttonInicio = (Button)findViewById(R.id.buttonInicio);
-        listViewHistorico = (ListView)findViewById(R.id.listViewHistorico);
+        buttonInicio = (Button) findViewById(R.id.buttonInicio);
+        listViewHistorico = (ListView) findViewById(R.id.listViewHistorico);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String historico = prefs.getString("historico", "[]");
         if (historico.equals("[]"))
@@ -43,53 +48,55 @@ public class HistoricoActivity extends AppCompatActivity {
             try {
                 jsonArray = new JSONArray(historico);
                 int qtd = jsonArray.length();
-                String[] lista = new String[qtd];
+                String[] listaTitulos = new String[qtd];
+                listaId = new Long[qtd];
                 for (int i = 0; i < qtd; i++) {
-                    Long id = jsonArray.getLong(i);
+                    String codigo = jsonArray.getString(i);
                     int indice = 0;
                     while (indice < filmes.size()) {
                         Filme filme = filmes.get(indice);
-                        if (filme.getId() == id) {
-                            lista[i] = filme.getTitle();
+                        if (filme.getCodigo().equals(codigo)) {
+                            listaTitulos[i] = filme.getTitle();
+                            listaId[i] = filme.getId();
                             break;
                         }
                         indice++;
                     }
                 }
-                adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, lista);
+                adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listaTitulos);
                 listViewHistorico.setAdapter(adapter);
                 listViewHistorico.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         Bundle bundle = new Bundle();
-                        try {
-                            bundle.putLong("id", jsonArray.getLong(position));
-                            filmeDao.close();
-                            Intent intent = new Intent(HistoricoActivity.this, DetalhesActivity.class);
-                            intent.putExtras(bundle);
-                            startActivity(intent);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            filmeDao.close();
-                        }
+                        bundle.putLong("id", listaId[position]);
+                        filmeDao.close();
+                        Intent intent = new Intent(HistoricoActivity.this, DetalhesActivity.class);
+                        intent.putExtras(bundle);
+                        startActivity(intent);
                     }
                 });
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                break;
-            default:break;
-        }
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        this.menu = menu;
+        inflater.inflate(R.menu.menuvoltar, menu);
         return true;
+    }
+
+    @SuppressLint("NewApi")
+    public boolean onOptionsItemSelected (MenuItem item) {
+        // Handle item selection
+        if (item.getItemId() == R.id.menu_inicio){
+                startActivity(new Intent(this, InicioActivity.class));
+                finish();
+                return true;
+        }
+        return false;
     }
 }
